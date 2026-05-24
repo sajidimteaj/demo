@@ -1,245 +1,1318 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>John Doe | Portfolio</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="container">
-            <a href="#" class="logo">JD</a>
-            <ul class="nav-links">
-                <li><a href="#home">Home</a></li>
-                <li><a href="#about">About</a></li>
-                <li><a href="#skills">Skills</a></li>
-                <li><a href="#projects">Projects</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-            <div class="hamburger">
-                <span></span>
-                <span></span>
-                <span></span>
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell
+} from 'recharts';
+import {
+  Settings, Bell, User, ChevronDown, ChevronUp, MoreVertical,
+  Play, Pause, Clock, Monitor, Zap, MessageCircle, Link as LinkIcon,
+  Check, ArrowUpRight, Sparkles, Lightbulb, TrendingUp, Shield,
+  Search, Activity, X, Edit3, Trash2, CheckCheck,
+  Mail, Phone, MapPin, Globe, Award, ChevronLeft, ChevronRight,
+  Plus, Calendar as CalendarIcon, Users, Video,
+  Home, UserCircle, Navigation, Search as SearchIcon, Star, CreditCard,
+  HelpCircle, Menu, Package, Truck, Map, Eye, FileText, Headphones,
+  Heart, Bookmark, Clock3, Wallet, Gift, AlertTriangle, ThumbsUp,
+  Send, Camera, Image as ImageIcon, ChevronDown as ChevronD,
+  LayoutDashboard, CalendarDays, MessageSquare, ShieldCheck, LogOut,
+  Smartphone, Lock, MapPin as Location, Star as StarIcon
+} from 'lucide-react';
+
+const PROFILE_IMAGE_URL = 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=400&fit=crop&crop=face';
+
+const initialProgressData = [
+  { day: 'S', value: 20 }, { day: 'M', value: 70 }, { day: 'T', value: 50 },
+  { day: 'W', value: 35 }, { day: 'T2', value: 65 }, { day: 'F', value: 90 }, { day: 'S2', value: 15 },
+];
+
+const initialTasks = [
+  { id: 1, title: 'Interview', subtitle: 'Sep 13, 08:30', icon: 'monitor', completed: true, category: 'meeting' },
+  { id: 2, title: 'Team Meeting', subtitle: 'Sep 13, 10:30', icon: 'zap', completed: true, category: 'meeting' },
+  { id: 3, title: 'Project Update', subtitle: 'Sep 13, 13:00', icon: 'message', completed: false, category: 'work' },
+  { id: 4, title: 'Discuss Q3 Goals', subtitle: 'Sep 13, 14:45', icon: 'ruler', completed: false, category: 'meeting' },
+  { id: 5, title: 'HR Policy Review', subtitle: 'Sep 13, 16:30', icon: 'link', completed: false, category: 'work' },
+  { id: 6, title: 'Code Review', subtitle: 'Sep 14, 09:00', icon: 'monitor', completed: false, category: 'work' },
+  { id: 7, title: 'Client Call', subtitle: 'Sep 14, 11:00', icon: 'message', completed: false, category: 'meeting' },
+  { id: 8, title: 'Deploy v2.1', subtitle: 'Sep 14, 15:00', icon: 'zap', completed: false, category: 'work' },
+];
+
+const initialNotifications = [
+  { id: 1, type: 'info', title: 'New team member joined', message: 'Sarah Connor joined the Design team', time: '2 min ago', read: false, avatar: '👩' },
+  { id: 2, type: 'success', title: 'Task Completed', message: 'Project Update task marked as done', time: '15 min ago', read: false, avatar: '✅' },
+  { id: 3, type: 'warning', title: 'Deadline approaching', message: 'HR Policy Review due in 2 hours', time: '30 min ago', read: false, avatar: '⚠️' },
+  { id: 4, type: 'info', title: 'Meeting reminder', message: 'Weekly Team Sync at 10:00 AM', time: '1 hour ago', read: true, avatar: '📅' },
+  { id: 5, type: 'success', title: 'Achievement unlocked', message: 'You completed 5 tasks this week!', time: '2 hours ago', read: true, avatar: '🏆' },
+];
+
+const navItems = ['Dashboard', 'People', 'Hiring', 'Devices', 'Apps', 'Salary', 'Calendar', 'Reviews'];
+
+// Sidebar menu items
+const sidebarMenuItems = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, section: null },
+  { id: 'profile', label: 'My Profile', icon: UserCircle, section: 'auth' },
+  { id: 'location', label: 'Find Service', icon: Navigation, section: 'geo' },
+  { id: 'providers', label: 'Providers', icon: Users, section: 'providers' },
+  { id: 'booking', label: 'Book Service', icon: CalendarDays, section: 'booking' },
+  { id: 'tracking', label: 'Track Order', icon: Truck, section: 'tracking' },
+  { id: 'chat', label: 'Messages', icon: MessageSquare, section: 'chat' },
+  { id: 'payment', label: 'Payments', icon: CreditCard, section: 'payment' },
+  { id: 'reviews', label: 'My Reviews', icon: Star, section: 'reviews' },
+  { id: 'support', label: 'Support', icon: Headphones, section: 'support' },
+];
+
+// Mock providers data
+const mockProviders = [
+  { id: 1, name: 'Rahim Khan', skill: 'Plumber', rating: 4.8, reviews: 124, price: 500, verified: true, distance: '1.2 km', image: '👨‍🔧', available: true, experience: '8 years' },
+  { id: 2, name: 'Karim Ahmed', skill: 'Electrician', rating: 4.6, reviews: 89, price: 600, verified: true, distance: '2.5 km', image: '⚡', available: true, experience: '5 years' },
+  { id: 3, name: 'Sumon Ali', skill: 'AC Technician', rating: 4.9, reviews: 201, price: 800, verified: true, distance: '0.8 km', image: '❄️', available: false, experience: '12 years' },
+  { id: 4, name: 'Jamal Uddin', skill: 'Carpenter', rating: 4.5, reviews: 67, price: 450, verified: true, distance: '3.1 km', image: '🪚', available: true, experience: '6 years' },
+  { id: 5, name: 'Faruk Hasan', skill: 'Painter', rating: 4.7, reviews: 156, price: 700, verified: true, distance: '1.8 km', image: '🎨', available: true, experience: '10 years' },
+  { id: 6, name: 'Nasir Mia', skill: 'Cleaner', rating: 4.4, reviews: 45, price: 300, verified: false, distance: '4.2 km', image: '🧹', available: true, experience: '3 years' },
+];
+
+// Mock orders
+const mockOrders = [
+  { id: 'ORD-001', provider: 'Rahim Khan', service: 'Plumbing Repair', status: 'en-route', date: 'Sep 24, 2024', time: '10:30 AM', price: 500, location: 'House 12, Road 5, Dhanmondi' },
+  { id: 'ORD-002', provider: 'Karim Ahmed', service: 'Electrical Fix', status: 'working', date: 'Sep 24, 2024', time: '2:00 PM', price: 600, location: 'Apt 4B, Gulshan Avenue' },
+  { id: 'ORD-003', provider: 'Faruk Hasan', service: 'Wall Painting', status: 'completed', date: 'Sep 23, 2024', time: '9:00 AM', price: 1200, location: 'House 8, Banani' },
+  { id: 'ORD-004', provider: 'Jamal Uddin', service: 'Furniture Repair', status: 'pending', date: 'Sep 25, 2024', time: '11:00 AM', price: 450, location: 'Flat 3A, Mirpur' },
+];
+
+// Mock chat messages
+const mockMessages = [
+  { id: 1, sender: 'provider', name: 'Rahim Khan', text: 'I\'m on my way. Will reach in 15 minutes.', time: '10:15 AM', avatar: '👨‍🔧' },
+  { id: 2, sender: 'me', text: 'Great, I\'ll be waiting at the gate.', time: '10:16 AM' },
+  { id: 3, sender: 'provider', name: 'Rahim Khan', text: 'Can you confirm the exact address?', time: '10:18 AM', avatar: '👨‍🔧' },
+  { id: 4, sender: 'me', text: 'House 12, Road 5, Dhanmondi. Near the mosque.', time: '10:19 AM' },
+  { id: 5, sender: 'provider', name: 'Rahim Khan', text: 'Got it. See you soon! 🚗', time: '10:20 AM', avatar: '👨‍🔧' },
+];
+
+// GlassCard component
+const GlassCard = ({ children, className = '', hover = true, ...props }) => (
+  <motion.div
+    whileHover={hover ? { y: -4, scale: 1.01 } : {}}
+    transition={{ duration: 0.3 }}
+    className={`relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] ${className}`}
+    {...props}
+  >
+    <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-white/[0.08] via-transparent to-transparent" />
+    <div className="pointer-events-none absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+    <div className="relative z-10">{children}</div>
+  </motion.div>
+);
+
+const AnimatedBackground = () => (
+  <div className="fixed inset-0 -z-10 overflow-hidden bg-[#050510]">
+    <div className="absolute inset-0 bg-gradient-to-br from-[#0a0515] via-[#0f0a1f] to-[#050510]" />
+    <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+    <motion.div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full opacity-40 blur-[120px]" style={{ background: 'radial-gradient(circle, #8b5cf6 0%, transparent 70%)' }} animate={{ x: [0, 100, -50, 0], y: [0, 80, -40, 0], scale: [1, 1.2, 0.9, 1] }} transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }} />
+    <motion.div className="absolute top-[30%] right-[-10%] w-[600px] h-[600px] rounded-full opacity-30 blur-[140px]" style={{ background: 'radial-gradient(circle, #f59e0b 0%, transparent 70%)' }} animate={{ x: [0, -100, 60, 0], y: [0, 100, -60, 0], scale: [1, 0.8, 1.1, 1] }} transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }} />
+    <motion.div className="absolute bottom-[-10%] left-[30%] w-[550px] h-[550px] rounded-full opacity-30 blur-[130px]" style={{ background: 'radial-gradient(circle, #ec4899 0%, transparent 70%)' }} animate={{ x: [0, 80, -80, 0], y: [0, -80, 60, 0], scale: [1, 1.15, 0.95, 1] }} transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }} />
+    {Array.from({ length: 20 }).map((_, i) => (
+      <motion.div key={i} className="absolute w-1 h-1 rounded-full bg-white/40" style={{ left: `${(i * 37) % 100}%`, top: `${(i * 53) % 100}%` }} animate={{ y: [0, -30, 0], opacity: [0.2, 0.8, 0.2] }} transition={{ duration: 3 + (i % 5), repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }} />
+    ))}
+  </div>
+);
+
+const ProfileImage = ({ size = 'md', withGlow = true }) => {
+  const sizeClasses = { sm: 'w-8 h-8', md: 'w-10 h-10', lg: 'w-16 h-16', xl: 'w-20 h-20' };
+  return (
+    <div className={`relative ${sizeClasses[size]} rounded-full shrink-0 ${withGlow ? 'shadow-[0_0_25px_rgba(251,191,36,0.4)]' : ''}`}>
+      <div className={`absolute inset-0 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-amber-500 p-0.5`}>
+        <img src={PROFILE_IMAGE_URL} alt="Profile" className="w-full h-full rounded-full object-cover border-2 border-[#0f0a1f]" onError={(e) => { e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f59e0b" width="100" height="100"/%3E%3Ctext x="50" y="60" font-size="40" text-anchor="middle" fill="white"%3EN%3C/text%3E%3C/svg%3E'; }} />
+      </div>
+      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0f0a1f] shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+    </div>
+  );
+};
+
+const CircularProgress = ({ percentage, size = 200, strokeWidth = 12, displayTime }) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (percentage / 100) * circumference;
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="transform -rotate-90">
+        <defs><linearGradient id="circleGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#fbbf24" /><stop offset="100%" stopColor="#f59e0b" /></linearGradient></defs>
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={strokeWidth} />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="url(#circleGrad)" strokeWidth={strokeWidth} strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.5))', transition: 'stroke-dashoffset 1s ease-out' }} />
+        {Array.from({ length: 60 }).map((_, i) => {
+          const angle = (i * 6 - 90) * (Math.PI / 180);
+          const isMajor = i % 5 === 0;
+          const innerR = radius - (isMajor ? 20 : 15);
+          const outerR = radius - 10;
+          return (<line key={i} x1={size / 2 + innerR * Math.cos(angle)} y1={size / 2 + innerR * Math.sin(angle)} x2={size / 2 + outerR * Math.cos(angle)} y2={size / 2 + outerR * Math.sin(angle)} stroke="rgba(255,255,255,0.3)" strokeWidth={isMajor ? 1.5 : 1} />);
+        })}
+      </svg>
+      <div className="absolute flex flex-col items-center">
+        <span className="text-4xl font-light text-white tracking-tight">{displayTime}</span>
+        <span className="text-xs text-white/60 uppercase tracking-widest mt-1">Work Time</span>
+      </div>
+    </div>
+  );
+};
+
+const AccordionItem = ({ title, isOpen, onToggle, children }) => (
+  <div className="border-b border-white/5 last:border-0">
+    <button onClick={onToggle} className="w-full flex items-center justify-between py-4 text-left group">
+      <span className="text-white/90 font-medium group-hover:text-amber-300 transition-colors">{title}</span>
+      <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.3 }}><ChevronDown size={18} className="text-white/60" /></motion.div>
+    </button>
+    <AnimatePresence>{isOpen && (<motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }} className="overflow-hidden">{children}</motion.div>)}</AnimatePresence>
+  </div>
+);
+
+const CalendarSchedule = () => {
+  const [currentDate, setCurrentDate] = useState(new Date(2024, 8, 23));
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showEventDetail, setShowEventDetail] = useState(false);
+  const [events] = useState([
+    { id: 1, title: 'Weekly Team Sync', description: 'Discuss progress', dayOffset: 0, startHour: 9, duration: 1.5, color: 'from-gray-700 to-gray-900', type: 'meeting', attendees: ['A', 'B', 'C'] },
+    { id: 2, title: 'Onboarding', description: 'New hires intro', dayOffset: 1, startHour: 10, duration: 1, color: 'from-white to-gray-100', type: 'meeting', attendees: ['F', 'G'], dark: true },
+    { id: 3, title: 'Design Review', description: 'Review mockups', dayOffset: 2, startHour: 14, duration: 1.5, color: 'from-amber-400 to-amber-500', type: 'work', attendees: ['A', 'B'] },
+    { id: 4, title: 'Client Call', description: 'QBR', dayOffset: 3, startHour: 11, duration: 1, color: 'from-purple-500 to-pink-500', type: 'meeting', attendees: ['C', 'D'] },
+    { id: 5, title: 'Code Review', description: 'PR #234', dayOffset: 4, startHour: 15, duration: 1, color: 'from-blue-500 to-blue-600', type: 'work', attendees: ['B'] },
+  ]);
+  const startHour = 8; const endHour = 16; const hourHeight = 48;
+  const timeSlots = []; for (let h = startHour; h < endHour; h++) timeSlots.push(h);
+  const formatHour = (h) => { const ampm = h >= 12 ? 'pm' : 'am'; const hour = h > 12 ? h - 12 : h === 0 ? 12 : h; return `${hour}${ampm}`; };
+  const getWeekDays = () => { const days = []; const dayOfWeek = currentDate.getDay(); const monday = new Date(currentDate); monday.setDate(currentDate.getDate() - ((dayOfWeek + 6) % 7)); for (let i = 0; i < 5; i++) { const d = new Date(monday); d.setDate(monday.getDate() + i); days.push(d); } return days; };
+  const weekDays = getWeekDays(); const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const navigateWeek = (dir) => { const newDate = new Date(currentDate); newDate.setDate(currentDate.getDate() + dir * 7); setCurrentDate(newDate); };
+  const isToday = (date) => { const today = new Date(2024, 8, 23); return date.getDate() === today.getDate() && date.getMonth() === today.getMonth(); };
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const handleEventClick = (e, event) => { e.stopPropagation(); setSelectedEvent(event); setShowEventDetail(true); };
+  const getEventsForDay = (dayIdx) => events.filter(e => e.dayOffset === dayIdx);
+
+  return (
+    <div className="relative">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2"><CalendarIcon size={16} className="text-amber-300" /><h3 className="text-base font-semibold text-white">Schedule</h3><span className="text-xs text-white/40 ml-2">{monthNames[currentDate.getMonth()]} {currentDate.getDate()}</span></div>
+        <div className="flex items-center gap-1">
+          <button onClick={() => navigateWeek(-1)} className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all"><ChevronLeft size={14} className="text-white/70" /></button>
+          <button onClick={() => navigateWeek(1)} className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all"><ChevronRight size={14} className="text-white/70" /></button>
+        </div>
+      </div>
+      <div className="relative">
+        <div className="grid grid-cols-[50px_repeat(5,1fr)] gap-0 mb-1 sticky top-0 z-20">
+          <div className="text-[10px] text-white/30 text-right pr-2 pt-1"></div>
+          {weekDays.map((date, i) => (<div key={i} className={`text-center py-1 border-l border-white/5 ${isToday(date) ? 'bg-amber-400/5' : ''}`}><p className="text-[10px] text-white/40 uppercase">{dayNames[i]}</p><p className={`text-sm font-medium ${isToday(date) ? 'text-amber-300' : 'text-white/70'}`}>{date.getDate()}</p></div>))}
+        </div>
+        <div className="relative border-t border-white/5 max-h-[400px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+          <div className="grid grid-cols-[50px_repeat(5,1fr)]">
+            {timeSlots.map((hour) => (<React.Fragment key={hour}><div className="text-[9px] text-white/30 text-right pr-2 pt-1 border-t border-white/5" style={{ height: hourHeight }}>{formatHour(hour)}</div>{weekDays.map((date, dayIdx) => (<div key={`${hour}-${dayIdx}`} className={`relative border-t border-l border-white/5 ${isToday(date) ? 'bg-amber-400/[0.02]' : ''}`} style={{ height: hourHeight }} />))}</React.Fragment>))}
+          </div>
+          <div className="absolute inset-0 grid grid-cols-[50px_repeat(5,1fr)] pointer-events-none">
+            <div />
+            {weekDays.map((_, dayIdx) => (<div key={dayIdx} className="relative border-l border-white/5">{getEventsForDay(dayIdx).map((event) => { const topPx = (event.startHour - startHour) * hourHeight; const heightPx = event.duration * hourHeight - 2; return (<motion.div key={event.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} whileHover={{ scale: 1.02, zIndex: 20 }} onClick={(e) => handleEventClick(e, event)} className={`absolute left-0.5 right-0.5 rounded-lg p-1.5 cursor-pointer pointer-events-auto overflow-hidden bg-gradient-to-br ${event.color} border ${event.dark ? 'border-white/20 text-gray-900' : 'border-white/10 text-white'} shadow-md hover:shadow-lg transition-shadow`} style={{ top: topPx + 1, height: heightPx, zIndex: 10 }}><p className="text-[10px] font-semibold truncate">{event.title}</p>{heightPx > 40 && <p className={`text-[9px] truncate ${event.dark ? 'text-gray-600' : 'text-white/70'}`}>{formatHour(event.startHour)}</p>}</motion.div>); })}</div>))}
+          </div>
+        </div>
+      </div>
+      <AnimatePresence>
+        {showEventDetail && selectedEvent && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md" style={{ zIndex: 999999 }} onClick={() => setShowEventDetail(false)}>
+            <motion.div initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-sm bg-[#0f0a1f]/98 backdrop-blur-2xl border border-white/15 rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.9)] overflow-hidden">
+              <div className={`h-20 bg-gradient-to-br ${selectedEvent.color} relative flex items-end p-4`}><button onClick={() => setShowEventDetail(false)} className="absolute top-3 right-3 p-1.5 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"><X size={14} className={selectedEvent.dark ? 'text-gray-900' : 'text-white'} /></button><h3 className={`text-base font-semibold ${selectedEvent.dark ? 'text-gray-900' : 'text-white'}`}>{selectedEvent.title}</h3></div>
+              <div className="p-5 space-y-3"><p className="text-sm text-white/70">{selectedEvent.description}</p><div className="flex items-center gap-2 text-xs text-white/50"><Clock size={14} className="text-amber-300" /><span>{formatHour(selectedEvent.startHour)} • {selectedEvent.duration}h</span></div>{selectedEvent.attendees && (<div className="flex -space-x-2">{selectedEvent.attendees.map((a, i) => (<div key={i} className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 border-2 border-[#0f0a1f] flex items-center justify-center text-[10px] font-bold text-white">{a}</div>))}</div>)}</div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// ==================== SIDEBAR PANELS ====================
+
+// Auth/Profile Panel
+const AuthPanel = ({ profile }) => {
+  const [editMode, setEditMode] = useState(false);
+  const [localProfile, setLocalProfile] = useState(profile);
+  const [addresses, setAddresses] = useState([
+    { id: 1, label: 'Home', address: 'House 12, Road 5, Dhanmondi, Dhaka', isDefault: true },
+    { id: 2, label: 'Office', address: 'Level 8, Gulshan Tower, Gulshan-1', isDefault: false },
+  ]);
+  const [newAddress, setNewAddress] = useState('');
+  const [showAddAddress, setShowAddAddress] = useState(false);
+
+  return (
+    <div className="space-y-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <h2 className="text-2xl font-light text-white mb-1">My Profile</h2>
+        <p className="text-sm text-white/50">Manage your personal information and addresses</p>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+        <GlassCard className="p-6" hover={false}>
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <ProfileImage size="xl" />
+            <div className="flex-1 text-center sm:text-left">
+              <h3 className="text-xl font-semibold text-white">{localProfile.name}</h3>
+              <p className="text-sm text-white/50 mt-1">{localProfile.role}</p>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-3">
+                <div className="flex items-center gap-1.5 text-xs text-white/50"><Mail size={12} className="text-amber-300" /> {localProfile.email}</div>
+                <div className="flex items-center gap-1.5 text-xs text-white/50"><Phone size={12} className="text-amber-300" /> {localProfile.phone}</div>
+                <div className="flex items-center gap-1.5 text-xs text-white/50"><MapPin size={12} className="text-amber-300" /> {localProfile.location}</div>
+              </div>
+              <div className="flex items-center gap-2 mt-4">
+                <span className="px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs rounded-full flex items-center gap-1"><ShieldCheck size={12} /> Verified</span>
+                <span className="px-3 py-1 bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs rounded-full flex items-center gap-1"><Star size={12} /> 4.9 Rating</span>
+              </div>
             </div>
-        </div>
-    </nav>
+            <button onClick={() => setEditMode(!editMode)} className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 text-sm font-semibold rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all flex items-center gap-2">
+              <Edit3 size={14} /> Edit
+            </button>
+          </div>
 
-    <!-- Hero Section -->
-    <section id="home" class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <div class="hero-text">
-                    <h1>Hi, I'm <span class="highlight">John Doe</span></h1>
-                    <h2>Full Stack Developer</h2>
-                    <p>I create beautiful, functional websites and applications that help businesses grow and succeed in the digital world.</p>
-                    <div class="hero-buttons">
-                        <a href="#projects" class="btn btn-primary">View My Work</a>
-                        <a href="#contact" class="btn btn-secondary">Get In Touch</a>
-                    </div>
-                </div>
-                <div class="hero-image">
-                    <div class="image-placeholder">
-                        <i class="fas fa-user"></i>
-                    </div>
-                </div>
+          {editMode && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="mt-6 pt-6 border-t border-white/5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><label className="text-xs text-white/50 uppercase tracking-wider mb-1 block">Full Name</label><input type="text" value={localProfile.name} onChange={(e) => setLocalProfile(p => ({ ...p, name: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-400/50 transition-all" /></div>
+                <div><label className="text-xs text-white/50 uppercase tracking-wider mb-1 block">Phone</label><input type="text" value={localProfile.phone} onChange={(e) => setLocalProfile(p => ({ ...p, phone: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-400/50 transition-all" /></div>
+                <div><label className="text-xs text-white/50 uppercase tracking-wider mb-1 block">Email</label><input type="email" value={localProfile.email} onChange={(e) => setLocalProfile(p => ({ ...p, email: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-400/50 transition-all" /></div>
+                <div><label className="text-xs text-white/50 uppercase tracking-wider mb-1 block">Location</label><input type="text" value={localProfile.location} onChange={(e) => setLocalProfile(p => ({ ...p, location: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-400/50 transition-all" /></div>
+              </div>
+              <button onClick={() => setEditMode(false)} className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 text-sm font-semibold rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all">Save Changes</button>
+            </motion.div>
+          )}
+        </GlassCard>
+      </motion.div>
+
+      {/* Addresses */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
+        <GlassCard className="p-6" hover={false}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2"><MapPin size={18} className="text-amber-300" /> Saved Addresses</h3>
+            <button onClick={() => setShowAddAddress(!showAddAddress)} className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all"><Plus size={14} className="text-white/70" /></button>
+          </div>
+          {showAddAddress && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="mb-4 flex gap-2">
+              <input type="text" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} placeholder="Enter new address..." className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-400/50 transition-all" />
+              <button onClick={() => { if (newAddress.trim()) { setAddresses(prev => [...prev, { id: Date.now(), label: 'New', address: newAddress, isDefault: false }]); setNewAddress(''); setShowAddAddress(false); } }} className="px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 text-sm font-semibold rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all">Add</button>
+            </motion.div>
+          )}
+          <div className="space-y-3">
+            {addresses.map((addr, i) => (
+              <motion.div key={addr.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all group">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${addr.isDefault ? 'bg-amber-400/20 border border-amber-400/30' : 'bg-white/5 border border-white/10'}`}><MapPin size={16} className={addr.isDefault ? 'text-amber-300' : 'text-white/60'} /></div>
+                <div className="flex-1 min-w-0"><p className="text-sm text-white font-medium">{addr.label} {addr.isDefault && <span className="text-xs text-amber-300 ml-1">(Default)</span>}</p><p className="text-xs text-white/50 truncate">{addr.address}</p></div>
+                <button className="p-2 rounded-lg hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={14} className="text-white/40 hover:text-red-400" /></button>
+              </motion.div>
+            ))}
+          </div>
+        </GlassCard>
+      </motion.div>
+
+      {/* Auth Methods */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.3 }}>
+        <GlassCard className="p-6" hover={false}>
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4"><Lock size={18} className="text-amber-300" /> Login Methods</h3>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5"><div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center"><Mail size={16} className="text-blue-400" /></div><div className="flex-1"><p className="text-sm text-white">Email Login</p><p className="text-xs text-white/50">{localProfile.email}</p></div><span className="text-xs text-emerald-300 bg-emerald-500/20 px-2 py-1 rounded-full">Active</span></div>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5"><div className="w-10 h-10 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center justify-center"><Smartphone size={16} className="text-green-400" /></div><div className="flex-1"><p className="text-sm text-white">Phone (OTP)</p><p className="text-xs text-white/50">{localProfile.phone}</p></div><span className="text-xs text-emerald-300 bg-emerald-500/20 px-2 py-1 rounded-full">Active</span></div>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5"><div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center"><Globe size={16} className="text-purple-400" /></div><div className="flex-1"><p className="text-sm text-white">Social Media</p><p className="text-xs text-white/50">Google, Facebook</p></div><span className="text-xs text-emerald-300 bg-emerald-500/20 px-2 py-1 rounded-full">Connected</span></div>
+          </div>
+        </GlassCard>
+      </motion.div>
+    </div>
+  );
+};
+
+// Geolocation/Search Panel
+const GeoPanel = () => {
+  const [location, setLocation] = useState('Detecting...');
+  const [category, setCategory] = useState('');
+  const [nearMe, setNearMe] = useState(false);
+  const categories = ['Plumber', 'Electrician', 'AC Technician', 'Carpenter', 'Painter', 'Cleaner', 'Gardener', 'Mechanic'];
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLocation('Dhanmondi, Dhaka, Bangladesh'), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <h2 className="text-2xl font-light text-white mb-1">Find Service</h2>
+        <p className="text-sm text-white/50">Search providers by category and location</p>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+        <GlassCard className="p-6" hover={false}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/20 flex items-center justify-center"><Navigation size={20} className="text-blue-400" /></div>
+            <div className="flex-1">
+              <p className="text-sm text-white/50">Current Location</p>
+              <p className="text-white font-medium flex items-center gap-2">{location} {location !== 'Detecting...' && <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}</p>
             </div>
-        </div>
-    </section>
+            <button onClick={() => { setLocation('Detecting...'); setTimeout(() => setLocation('Gulshan, Dhaka, Bangladesh'), 1500); }} className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white/70 hover:bg-white/10 transition-all flex items-center gap-1.5"><Navigation size={12} /> Detect</button>
+          </div>
 
-    <!-- About Section -->
-    <section id="about" class="about">
-        <div class="container">
-            <h2 class="section-title">About Me</h2>
-            <div class="about-content">
-                <div class="about-text">
-                    <p>Hello! I'm a passionate full-stack developer with over 5 years of experience in creating digital solutions. I specialize in building responsive websites, web applications, and everything in between.</p>
-                    <p>My journey in tech started when I built my first website at age 16, and I've been hooked ever since. I love solving complex problems and turning ideas into reality through code.</p>
-                    <p>When I'm not coding, you can find me exploring new technologies, contributing to open-source projects, or enjoying a good cup of coffee while reading about the latest industry trends.</p>
+          {/* Map placeholder */}
+          <div className="w-full h-48 rounded-2xl bg-gradient-to-br from-blue-900/20 to-purple-900/20 border border-white/5 flex items-center justify-center relative overflow-hidden mb-4">
+            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(59,130,246,0.3) 0%, transparent 60%)' }} />
+            <motion.div animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }} transition={{ duration: 2, repeat: Infinity }} className="w-4 h-4 rounded-full bg-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.8)]" />
+            <div className="absolute bottom-3 left-3 text-xs text-white/40 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Map size={12} /> Live Map View</div>
+          </div>
+
+          <div className="space-y-4">
+            <div><label className="text-xs text-white/50 uppercase tracking-wider mb-2 block">Search by Category</label><div className="flex flex-wrap gap-2">{categories.map(cat => (<button key={cat} onClick={() => setCategory(cat)} className={`px-3 py-2 rounded-xl text-xs transition-all ${category === cat ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 font-semibold shadow-[0_0_15px_rgba(251,191,36,0.3)]' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'}`}>{cat}</button>))}</div></div>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5"><div className="flex items-center gap-2"><Location size={16} className="text-amber-300" /><span className="text-sm text-white/70">Near Me (within 5km)</span></div><button onClick={() => setNearMe(!nearMe)} className={`w-12 h-6 rounded-full transition-all ${nearMe ? 'bg-gradient-to-r from-amber-400 to-amber-500' : 'bg-white/10'}`}><div className={`w-5 h-5 rounded-full bg-white shadow-md transition-all ${nearMe ? 'translate-x-6' : 'translate-x-0.5'}`} /></button></div>
+          </div>
+        </GlassCard>
+      </motion.div>
+
+      {/* Zone Selection */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
+        <GlassCard className="p-6" hover={false}>
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4"><Map size={18} className="text-amber-300" /> Service Zones</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {['Dhanmondi', 'Gulshan', 'Banani', 'Mirpur', 'Uttara', 'Mohammadpur'].map((zone, i) => (
+              <motion.button key={zone} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 + i * 0.05 }} className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-amber-400/30 hover:bg-amber-400/5 transition-all text-left group">
+                <p className="text-sm text-white group-hover:text-amber-300 transition-colors">{zone}</p>
+                <p className="text-xs text-white/30 mt-0.5">{Math.floor(Math.random() * 50 + 10)} providers</p>
+              </motion.button>
+            ))}
+          </div>
+        </GlassCard>
+      </motion.div>
+    </div>
+  );
+};
+
+// Providers Panel
+const ProvidersPanel = () => {
+  const [selectedProvider, setSelectedProvider] = useState(null);
+  const [filterCategory, setFilterCategory] = useState('all');
+
+  const filtered = filterCategory === 'all' ? mockProviders : mockProviders.filter(p => p.skill === filterCategory);
+
+  return (
+    <div className="space-y-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <h2 className="text-2xl font-light text-white mb-1">Service Providers</h2>
+        <p className="text-sm text-white/50">Browse verified professionals near you</p>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {['all', 'Plumber', 'Electrician', 'AC Technician', 'Carpenter', 'Painter', 'Cleaner'].map(cat => (
+            <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-4 py-2 rounded-xl text-xs transition-all capitalize whitespace-nowrap ${filterCategory === cat ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 font-semibold' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'}`}>{cat === 'all' ? 'All Services' : cat}</button>
+          ))}
+        </div>
+      </motion.div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {filtered.map((provider, i) => (
+          <motion.div key={provider.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.05 }}>
+            <GlassCard className="p-5" hover={true}>
+              <div className="flex items-start gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center text-2xl shrink-0">{provider.image}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-semibold text-white truncate">{provider.name}</h4>
+                    {provider.verified && <ShieldCheck size={14} className="text-blue-400 shrink-0" />}
+                  </div>
+                  <p className="text-xs text-amber-300/80 mt-0.5">{provider.skill} • {provider.experience}</p>
+                  <div className="flex items-center gap-3 mt-2">
+                    <div className="flex items-center gap-1"><Star size={12} className="text-amber-400 fill-amber-400" /><span className="text-xs text-white/70">{provider.rating}</span><span className="text-xs text-white/30">({provider.reviews})</span></div>
+                    <div className="flex items-center gap-1 text-xs text-white/40"><MapPin size={10} /> {provider.distance}</div>
+                  </div>
                 </div>
-                <div class="about-stats">
-                    <div class="stat-item">
-                        <i class="fas fa-code"></i>
-                        <h3>50+</h3>
-                        <p>Projects Completed</p>
-                    </div>
-                    <div class="stat-item">
-                        <i class="fas fa-users"></i>
-                        <h3>30+</h3>
-                        <p>Happy Clients</p>
-                    </div>
-                    <div class="stat-item">
-                        <i class="fas fa-clock"></i>
-                        <h3>5+</h3>
-                        <p>Years Experience</p>
-                    </div>
+                <div className={`px-2 py-1 rounded-lg text-[10px] font-medium ${provider.available ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}`}>{provider.available ? 'Available' : 'Busy'}</div>
+              </div>
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
+                <p className="text-sm text-white/50">Starting from <span className="text-amber-300 font-semibold">৳{provider.price}</span></p>
+                <div className="flex gap-2">
+                  <button onClick={() => setSelectedProvider(provider)} className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white/70 hover:bg-white/10 transition-all flex items-center gap-1"><Eye size={12} /> View</button>
+                  <button className="px-3 py-1.5 bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 rounded-lg text-xs font-semibold hover:shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all">Book Now</button>
                 </div>
+              </div>
+            </GlassCard>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Provider Detail Modal */}
+      <AnimatePresence>
+        {selectedProvider && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md" style={{ zIndex: 999999 }} onClick={() => setSelectedProvider(null)}>
+            <motion.div initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-md bg-[#0f0a1f]/98 backdrop-blur-2xl border border-white/15 rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.9)] overflow-hidden max-h-[80vh] overflow-y-auto">
+              <div className="h-24 bg-gradient-to-r from-purple-600/30 via-pink-500/30 to-amber-500/30 relative">
+                <button onClick={() => setSelectedProvider(null)} className="absolute top-3 right-3 p-2 bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20 transition-all"><X size={16} className="text-white" /></button>
+              </div>
+              <div className="px-6 pb-6 -mt-10">
+                <div className="w-20 h-20 rounded-2xl bg-[#0f0a1f] border-4 border-[#0f0a1f] flex items-center justify-center text-4xl">{selectedProvider.image}</div>
+                <div className="mt-3">
+                  <div className="flex items-center gap-2"><h3 className="text-xl font-semibold text-white">{selectedProvider.name}</h3>{selectedProvider.verified && <ShieldCheck size={16} className="text-blue-400" />}</div>
+                  <p className="text-sm text-amber-300/80 mt-1">{selectedProvider.skill} • {selectedProvider.experience} experience</p>
+                  <div className="flex items-center gap-4 mt-3">
+                    <div className="flex items-center gap-1"><Star size={14} className="text-amber-400 fill-amber-400" /><span className="text-sm text-white font-medium">{selectedProvider.rating}</span><span className="text-xs text-white/40">({selectedProvider.reviews} reviews)</span></div>
+                    <div className="flex items-center gap-1 text-xs text-white/50"><MapPin size={12} /> {selectedProvider.distance}</div>
+                  </div>
+                </div>
+                <div className="mt-4 p-3 rounded-xl bg-white/[0.03] border border-white/5"><p className="text-sm text-white/70">Starting from <span className="text-amber-300 font-semibold text-lg">৳{selectedProvider.price}</span></p></div>
+                <div className="mt-4 space-y-2">
+                  <h4 className="text-sm font-medium text-white/70">Skills & Expertise</h4>
+                  <div className="flex flex-wrap gap-2">{['Pipe Repair', 'Leak Fix', 'Installation', 'Maintenance', 'Emergency'].map(s => (<span key={s} className="px-3 py-1 bg-white/5 border border-white/10 text-xs text-white/60 rounded-full">{s}</span>))}</div>
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <button className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-sm text-white/70 hover:bg-white/10 transition-all flex items-center justify-center gap-2"><MessageCircle size={14} /> Chat</button>
+                  <button className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-sm font-semibold text-gray-900 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)] transition-all flex items-center justify-center gap-2"><CalendarDays size={14} /> Book Now</button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Booking Panel
+const BookingPanel = () => {
+  const [bookingType, setBookingType] = useState('instant');
+  const [selectedService, setSelectedService] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
+  const services = ['Plumbing Repair', 'Electrical Fix', 'AC Service', 'Carpentry Work', 'Painting', 'Deep Cleaning'];
+  const timeSlots = ['09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM'];
+
+  const handleBook = () => {
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  return (
+    <div className="space-y-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <h2 className="text-2xl font-light text-white mb-1">Book a Service</h2>
+        <p className="text-sm text-white/50">Schedule instant or future service appointments</p>
+      </motion.div>
+
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-500/30 flex items-center justify-center"><Check size={20} className="text-emerald-300" /></div>
+            <div><p className="text-sm font-medium text-emerald-300">Booking Confirmed!</p><p className="text-xs text-emerald-300/60">You'll receive a confirmation shortly</p></div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+        <GlassCard className="p-6" hover={false}>
+          {/* Booking Type */}
+          <div className="mb-6">
+            <label className="text-xs text-white/50 uppercase tracking-wider mb-3 block">Booking Type</label>
+            <div className="flex gap-3">
+              <button onClick={() => setBookingType('instant')} className={`flex-1 p-4 rounded-2xl border transition-all ${bookingType === 'instant' ? 'bg-amber-400/10 border-amber-400/30 shadow-[0_0_20px_rgba(251,191,36,0.1)]' : 'bg-white/[0.02] border-white/5 hover:bg-white/5'}`}>
+                <Zap size={20} className={bookingType === 'instant' ? 'text-amber-300' : 'text-white/40'} />
+                <p className="text-sm font-medium text-white mt-2">Instant</p><p className="text-xs text-white/40 mt-0.5">Need it now</p>
+              </button>
+              <button onClick={() => setBookingType('scheduled')} className={`flex-1 p-4 rounded-2xl border transition-all ${bookingType === 'scheduled' ? 'bg-amber-400/10 border-amber-400/30 shadow-[0_0_20px_rgba(251,191,36,0.1)]' : 'bg-white/[0.02] border-white/5 hover:bg-white/5'}`}>
+                <CalendarDays size={20} className={bookingType === 'scheduled' ? 'text-amber-300' : 'text-white/40'} />
+                <p className="text-sm font-medium text-white mt-2">Scheduled</p><p className="text-xs text-white/40 mt-0.5">Pick date & time</p>
+              </button>
             </div>
-        </div>
-    </section>
+          </div>
 
-    <!-- Skills Section -->
-    <section id="skills" class="skills">
-        <div class="container">
-            <h2 class="section-title">My Skills</h2>
-            <div class="skills-grid">
-                <div class="skill-category">
-                    <h3><i class="fas fa-laptop-code"></i> Frontend</h3>
-                    <div class="skill-items">
-                        <span class="skill-tag">HTML5</span>
-                        <span class="skill-tag">CSS3</span>
-                        <span class="skill-tag">JavaScript</span>
-                        <span class="skill-tag">React</span>
-                        <span class="skill-tag">Vue.js</span>
-                        <span class="skill-tag">TypeScript</span>
-                    </div>
-                </div>
-                <div class="skill-category">
-                    <h3><i class="fas fa-server"></i> Backend</h3>
-                    <div class="skill-items">
-                        <span class="skill-tag">Node.js</span>
-                        <span class="skill-tag">Python</span>
-                        <span class="skill-tag">Express</span>
-                        <span class="skill-tag">Django</span>
-                        <span class="skill-tag">PostgreSQL</span>
-                        <span class="skill-tag">MongoDB</span>
-                    </div>
-                </div>
-                <div class="skill-category">
-                    <h3><i class="fas fa-tools"></i> Tools</h3>
-                    <div class="skill-items">
-                        <span class="skill-tag">Git</span>
-                        <span class="skill-tag">Docker</span>
-                        <span class="skill-tag">AWS</span>
-                        <span class="skill-tag">Figma</span>
-                        <span class="skill-tag">VS Code</span>
-                        <span class="skill-tag">Linux</span>
-                    </div>
-                </div>
+          {/* Service Selection */}
+          <div className="mb-4">
+            <label className="text-xs text-white/50 uppercase tracking-wider mb-2 block">Select Service</label>
+            <div className="flex flex-wrap gap-2">{services.map(s => (<button key={s} onClick={() => setSelectedService(s)} className={`px-3 py-2 rounded-xl text-xs transition-all ${selectedService === s ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 font-semibold' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'}`}>{s}</button>))}</div>
+          </div>
+
+          {/* Date/Time for Scheduled */}
+          {bookingType === 'scheduled' && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="mb-4 space-y-3">
+              <div><label className="text-xs text-white/50 uppercase tracking-wider mb-2 block">Date</label><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-400/50 transition-all" /></div>
+              <div><label className="text-xs text-white/50 uppercase tracking-wider mb-2 block">Time Slot</label><div className="flex flex-wrap gap-2">{timeSlots.map(t => (<button key={t} onClick={() => setSelectedTime(t)} className={`px-3 py-2 rounded-lg text-xs transition-all ${selectedTime === t ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'}`}>{t}</button>))}</div></div>
+            </motion.div>
+          )}
+
+          {/* Description */}
+          <div className="mb-4">
+            <label className="text-xs text-white/50 uppercase tracking-wider mb-2 block">Describe the Issue</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Tell us about the problem..." rows={3} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-400/50 transition-all resize-none" />
+          </div>
+
+          {/* Image Upload */}
+          <div className="mb-6">
+            <label className="text-xs text-white/50 uppercase tracking-wider mb-2 block">Upload Images/Videos</label>
+            <div className="flex gap-3">
+              <div className="w-20 h-20 rounded-xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer hover:border-amber-400/30 hover:bg-amber-400/5 transition-all"><Camera size={20} className="text-white/30" /><span className="text-[10px] text-white/30 mt-1">Photo</span></div>
+              <div className="w-20 h-20 rounded-xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer hover:border-amber-400/30 hover:bg-amber-400/5 transition-all"><Video size={20} className="text-white/30" /><span className="text-[10px] text-white/30 mt-1">Video</span></div>
+              <div className="w-20 h-20 rounded-xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer hover:border-amber-400/30 hover:bg-amber-400/5 transition-all"><ImageIcon size={20} className="text-white/30" /><span className="text-[10px] text-white/30 mt-1">Gallery</span></div>
             </div>
-        </div>
-    </section>
+          </div>
 
-    <!-- Projects Section -->
-    <section id="projects" class="projects">
-        <div class="container">
-            <h2 class="section-title">Featured Projects</h2>
-            <div class="projects-grid">
-                <div class="project-card">
-                    <div class="project-image">
-                        <i class="fas fa-shopping-cart"></i>
-                    </div>
-                    <div class="project-info">
-                        <h3>E-Commerce Platform</h3>
-                        <p>A full-featured online store with payment integration, inventory management, and admin dashboard.</p>
-                        <div class="project-tags">
-                            <span>React</span>
-                            <span>Node.js</span>
-                            <span>MongoDB</span>
-                        </div>
-                        <div class="project-links">
-                            <a href="#"><i class="fab fa-github"></i> Code</a>
-                            <a href="#"><i class="fas fa-external-link-alt"></i> Live Demo</a>
-                        </div>
-                    </div>
+          <button onClick={handleBook} className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 font-semibold rounded-xl hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] transition-all flex items-center justify-center gap-2">
+            <CalendarDays size={16} /> {bookingType === 'instant' ? 'Book Instant Service' : 'Schedule Service'}
+          </button>
+        </GlassCard>
+      </motion.div>
+    </div>
+  );
+};
+
+// Order Tracking Panel
+const TrackingPanel = () => {
+  const statusSteps = ['Pending', 'Accepted', 'En-Route', 'Working', 'Completed'];
+  const statusColors = { pending: 0, accepted: 1, 'en-route': 2, working: 3, completed: 4 };
+
+  return (
+    <div className="space-y-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <h2 className="text-2xl font-light text-white mb-1">Track Orders</h2>
+        <p className="text-sm text-white/50">Real-time status updates for your bookings</p>
+      </motion.div>
+
+      {mockOrders.map((order, i) => (
+        <motion.div key={order.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.1 }}>
+          <GlassCard className="p-5" hover={false}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${order.status === 'completed' ? 'bg-emerald-500/20 border border-emerald-500/30' : order.status === 'working' ? 'bg-blue-500/20 border border-blue-500/30' : order.status === 'en-route' ? 'bg-amber-500/20 border border-amber-500/30' : 'bg-white/5 border border-white/10'}`}>
+                  {order.status === 'completed' ? <Check size={16} className="text-emerald-300" /> : order.status === 'working' ? <Package size={16} className="text-blue-300" /> : order.status === 'en-route' ? <Truck size={16} className="text-amber-300" /> : <Clock3 size={16} className="text-white/60" />}
                 </div>
-                <div class="project-card">
-                    <div class="project-image">
-                        <i class="fas fa-tasks"></i>
-                    </div>
-                    <div class="project-info">
-                        <h3>Task Management App</h3>
-                        <p>A collaborative project management tool with real-time updates, team features, and analytics.</p>
-                        <div class="project-tags">
-                            <span>Vue.js</span>
-                            <span>Firebase</span>
-                            <span>Tailwind</span>
-                        </div>
-                        <div class="project-links">
-                            <a href="#"><i class="fab fa-github"></i> Code</a>
-                            <a href="#"><i class="fas fa-external-link-alt"></i> Live Demo</a>
-                        </div>
-                    </div>
+                <div>
+                  <p className="text-sm font-medium text-white">{order.service}</p>
+                  <p className="text-xs text-white/50">{order.provider} • {order.id}</p>
                 </div>
-                <div class="project-card">
-                    <div class="project-image">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="project-info">
-                        <h3>Analytics Dashboard</h3>
-                        <p>Interactive data visualization dashboard with customizable widgets and real-time data processing.</p>
-                        <div class="project-tags">
-                            <span>React</span>
-                            <span>D3.js</span>
-                            <span>Python</span>
-                        </div>
-                        <div class="project-links">
-                            <a href="#"><i class="fab fa-github"></i> Code</a>
-                            <a href="#"><i class="fas fa-external-link-alt"></i> Live Demo</a>
-                        </div>
-                    </div>
-                </div>
+              </div>
+              <span className={`px-3 py-1 rounded-full text-[10px] font-medium capitalize ${order.status === 'completed' ? 'bg-emerald-500/20 text-emerald-300' : order.status === 'working' ? 'bg-blue-500/20 text-blue-300' : order.status === 'en-route' ? 'bg-amber-500/20 text-amber-300' : 'bg-white/10 text-white/60'}`}>{order.status}</span>
             </div>
-        </div>
-    </section>
 
-    <!-- Contact Section -->
-    <section id="contact" class="contact">
-        <div class="container">
-            <h2 class="section-title">Get In Touch</h2>
-            <div class="contact-content">
-                <div class="contact-info">
-                    <h3>Let's work together!</h3>
-                    <p>I'm always interested in hearing about new projects and opportunities. Whether you have a question or just want to say hi, feel free to reach out!</p>
-                    <div class="contact-details">
-                        <div class="contact-item">
-                            <i class="fas fa-envelope"></i>
-                            <span>john.doe@email.com</span>
-                        </div>
-                        <div class="contact-item">
-                            <i class="fas fa-phone"></i>
-                            <span>+1 (555) 123-4567</span>
-                        </div>
-                        <div class="contact-item">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>San Francisco, CA</span>
-                        </div>
-                    </div>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-github"></i></a>
-                        <a href="#"><i class="fab fa-linkedin"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-dribbble"></i></a>
-                    </div>
-                </div>
-                <form class="contact-form" id="contactForm">
-                    <div class="form-group">
-                        <input type="text" id="name" name="name" placeholder="Your Name" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="email" id="email" name="email" placeholder="Your Email" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="subject" name="subject" placeholder="Subject" required>
-                    </div>
-                    <div class="form-group">
-                        <textarea id="message" name="message" rows="5" placeholder="Your Message" required></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Send Message</button>
-                </form>
+            {/* Progress Steps */}
+            <div className="flex items-center gap-1 mb-3">
+              {statusSteps.map((step, idx) => (
+                <React.Fragment key={step}>
+                  <div className="flex flex-col items-center flex-1">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${idx <= statusColors[order.status] ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900' : 'bg-white/10 text-white/30'}`}>{idx + 1}</div>
+                    <span className="text-[9px] text-white/40 mt-1 text-center">{step}</span>
+                  </div>
+                  {idx < statusSteps.length - 1 && <div className={`h-0.5 flex-1 -mt-4 ${idx < statusColors[order.status] ? 'bg-gradient-to-r from-amber-400 to-amber-500' : 'bg-white/10'}`} />}
+                </React.Fragment>
+              ))}
             </div>
-        </div>
-    </section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 John Doe. All rights reserved.</p>
-        </div>
-    </footer>
+            <div className="flex items-center justify-between pt-3 border-t border-white/5">
+              <div className="flex items-center gap-4 text-xs text-white/40">
+                <span className="flex items-center gap-1"><CalendarIcon size={10} /> {order.date}</span>
+                <span className="flex items-center gap-1"><Clock size={10} /> {order.time}</span>
+              </div>
+              <p className="text-sm text-amber-300 font-semibold">৳{order.price}</p>
+            </div>
 
-    <script src="script.js"></script>
-</body>
-</html>
+            {/* Live map for en-route */}
+            {(order.status === 'en-route' || order.status === 'working') && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="mt-3 pt-3 border-t border-white/5">
+                <div className="w-full h-32 rounded-xl bg-gradient-to-br from-blue-900/20 to-purple-900/20 border border-white/5 flex items-center justify-center relative overflow-hidden">
+                  <motion.div animate={{ x: [-20, 20, -20], y: [-10, 10, -10] }} transition={{ duration: 4, repeat: Infinity }} className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.8)]" />
+                  <div className="absolute bottom-2 left-2 text-[10px] text-white/40 bg-black/30 backdrop-blur-sm px-2 py-1 rounded flex items-center gap-1"><Map size={10} /> Live Tracking</div>
+                </div>
+              </motion.div>
+            )}
+          </GlassCard>
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
+// Chat Panel
+const ChatPanel = () => {
+  const [messages, setMessages] = useState(mockMessages);
+  const [newMessage, setNewMessage] = useState('');
+  const chatEndRef = useRef(null);
+
+  const sendMessage = () => {
+    if (!newMessage.trim()) return;
+    setMessages(prev => [...prev, { id: Date.now(), sender: 'me', text: newMessage, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+    setNewMessage('');
+    setTimeout(() => {
+      setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'provider', name: 'Rahim Khan', text: 'Thanks for the update! 👍', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), avatar: '👨‍🔧' }]);
+    }, 2000);
+  };
+
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  return (
+    <div className="space-y-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <h2 className="text-2xl font-light text-white mb-1">Messages</h2>
+        <p className="text-sm text-white/50">Chat with your service provider</p>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+        <GlassCard className="overflow-hidden" hover={false}>
+          {/* Chat Header */}
+          <div className="p-4 border-b border-white/5 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400/20 to-amber-500/10 border border-amber-400/20 flex items-center justify-center text-lg">👨‍🔧</div>
+            <div className="flex-1"><p className="text-sm font-medium text-white">Rahim Khan</p><p className="text-xs text-emerald-300 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Online</p></div>
+            <button className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all"><Phone size={14} className="text-white/60" /></button>
+          </div>
+
+          {/* Messages */}
+          <div className="p-4 h-[350px] overflow-y-auto space-y-3" style={{ scrollbarWidth: 'thin' }}>
+            {messages.map((msg, i) => (
+              <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[75%] ${msg.sender === 'me' ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900' : 'bg-white/10 text-white'} rounded-2xl px-4 py-2.5 ${msg.sender === 'me' ? 'rounded-br-md' : 'rounded-bl-md'}`}>
+                  <p className="text-sm">{msg.text}</p>
+                  <p className={`text-[10px] mt-1 ${msg.sender === 'me' ? 'text-gray-700' : 'text-white/40'} text-right`}>{msg.time}</p>
+                </div>
+              </motion.div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Input */}
+          <div className="p-4 border-t border-white/5 flex items-center gap-3">
+            <button className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all shrink-0"><Camera size={14} className="text-white/60" /></button>
+            <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} placeholder="Type a message..." className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-400/50 transition-all" />
+            <button onClick={sendMessage} className="w-9 h-9 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 flex items-center justify-center hover:shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all shrink-0"><Send size={14} className="text-gray-900" /></button>
+          </div>
+        </GlassCard>
+      </motion.div>
+    </div>
+  );
+};
+
+// Payment Panel
+const PaymentPanel = () => {
+  const [selectedMethod, setSelectedMethod] = useState('card');
+  const [walletBalance] = useState(1250);
+
+  return (
+    <div className="space-y-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <h2 className="text-2xl font-light text-white mb-1">Payments</h2>
+        <p className="text-sm text-white/50">Manage payment methods and wallet</p>
+      </motion.div>
+
+      {/* Wallet */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+        <GlassCard className="p-6 bg-gradient-to-br from-amber-500/10 to-transparent" hover={false}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400/20 to-amber-500/10 border border-amber-400/20 flex items-center justify-center"><Wallet size={20} className="text-amber-300" /></div><div><p className="text-xs text-white/50">Wallet Balance</p><p className="text-2xl font-light text-white">৳{walletBalance.toLocaleString()}</p></div></div>
+            <div className="flex gap-2"><button className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 text-xs font-semibold rounded-xl hover:shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all">Add Money</button></div>
+          </div>
+          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-white/5">
+            <div className="flex items-center gap-2 text-xs text-white/50"><Gift size={14} className="text-amber-300" /> 150 Loyalty Points</div>
+            <div className="flex items-center gap-2 text-xs text-white/50"><TrendingUp size={14} className="text-emerald-400" /> ৳500 Cashback</div>
+          </div>
+        </GlassCard>
+      </motion.div>
+
+      {/* Payment Methods */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
+        <GlassCard className="p-6" hover={false}>
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><CreditCard size={18} className="text-amber-300" /> Payment Methods</h3>
+          <div className="space-y-3">
+            {[
+              { id: 'card', icon: '💳', label: 'Credit/Debit Card', detail: '**** 4582' },
+              { id: 'bkash', icon: '📱', label: 'bKash', detail: '01712-345678' },
+              { id: 'nagad', icon: '💰', label: 'Nagad', detail: '01712-345678' },
+              { id: 'cash', icon: '💵', label: 'Cash on Completion', detail: 'Pay after service' },
+              { id: 'stripe', icon: '🌐', label: 'Stripe', detail: 'International' },
+            ].map((method, i) => (
+              <motion.div key={method.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.05 }} onClick={() => setSelectedMethod(method.id)} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${selectedMethod === method.id ? 'bg-amber-400/10 border-amber-400/30' : 'bg-white/[0.02] border-white/5 hover:bg-white/5'}`}>
+                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg">{method.icon}</div>
+                <div className="flex-1"><p className="text-sm text-white font-medium">{method.label}</p><p className="text-xs text-white/40">{method.detail}</p></div>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedMethod === method.id ? 'border-amber-400 bg-amber-400' : 'border-white/20'}`}>{selectedMethod === method.id && <Check size={12} className="text-gray-900" strokeWidth={3} />}</div>
+              </motion.div>
+            ))}
+          </div>
+        </GlassCard>
+      </motion.div>
+
+      {/* Transaction History */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.3 }}>
+        <GlassCard className="p-6" hover={false}>
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><FileText size={18} className="text-amber-300" /> Recent Transactions</h3>
+          <div className="space-y-3">
+            {[
+              { id: 1, service: 'Plumbing Repair', amount: -500, date: 'Sep 24', status: 'completed' },
+              { id: 2, service: 'Wallet Top-up', amount: 1000, date: 'Sep 23', status: 'completed' },
+              { id: 3, service: 'Cashback Reward', amount: 150, date: 'Sep 22', status: 'completed' },
+              { id: 4, service: 'AC Service', amount: -800, date: 'Sep 21', status: 'refunded' },
+            ].map((tx) => (
+              <div key={tx.id} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                <div><p className="text-sm text-white">{tx.service}</p><p className="text-xs text-white/40">{tx.date}</p></div>
+                <p className={`text-sm font-semibold ${tx.amount > 0 ? 'text-emerald-300' : 'text-white'}`}>{tx.amount > 0 ? '+' : ''}৳{Math.abs(tx.amount)}</p>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+      </motion.div>
+    </div>
+  );
+};
+
+// Reviews Panel
+const ReviewsPanel = () => {
+  const [reviews, setReviews] = useState([
+    { id: 1, provider: 'Rahim Khan', service: 'Plumbing Repair', rating: 5, comment: 'Excellent work! Fixed the leak quickly and professionally.', date: 'Sep 24, 2024' },
+    { id: 2, provider: 'Faruk Hasan', service: 'Wall Painting', rating: 4, comment: 'Good job, but took a bit longer than expected.', date: 'Sep 23, 2024' },
+  ]);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [newRating, setNewRating] = useState(0);
+  const [newComment, setNewComment] = useState('');
+
+  const submitReview = () => {
+    if (newRating === 0) return;
+    setReviews(prev => [{ id: Date.now(), provider: 'Karim Ahmed', service: 'Electrical Fix', rating: newRating, comment: newComment, date: new Date().toLocaleDateString() }, ...prev]);
+    setShowReviewForm(false);
+    setNewRating(0);
+    setNewComment('');
+  };
+
+  return (
+    <div className="space-y-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <div className="flex items-center justify-between">
+          <div><h2 className="text-2xl font-light text-white mb-1">My Reviews</h2><p className="text-sm text-white/50">Rate and review service providers</p></div>
+          <button onClick={() => setShowReviewForm(!showReviewForm)} className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 text-sm font-semibold rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all flex items-center gap-2"><Plus size={14} /> Write Review</button>
+        </div>
+      </motion.div>
+
+      <AnimatePresence>
+        {showReviewForm && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
+            <GlassCard className="p-6 mb-6" hover={false}>
+              <h3 className="text-lg font-semibold text-white mb-4">Write a Review</h3>
+              <div className="mb-4"><label className="text-xs text-white/50 uppercase tracking-wider mb-2 block">Rating</label><div className="flex gap-2">{[1, 2, 3, 4, 5].map(s => (<button key={s} onClick={() => setNewRating(s)} className="transition-all hover:scale-125"><Star size={24} className={`${s <= newRating ? 'text-amber-400 fill-amber-400' : 'text-white/20'}`} /></button>))}</div></div>
+              <div className="mb-4"><label className="text-xs text-white/50 uppercase tracking-wider mb-2 block">Comment</label><textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Share your experience..." rows={3} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-400/50 transition-all resize-none" /></div>
+              <button onClick={submitReview} className="px-6 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 text-sm font-semibold rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all">Submit Review</button>
+            </GlassCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {reviews.map((review, i) => (
+        <motion.div key={review.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+          <GlassCard className="p-5" hover={false}>
+            <div className="flex items-center justify-between mb-2">
+              <div><p className="text-sm font-medium text-white">{review.provider}</p><p className="text-xs text-white/40">{review.service} • {review.date}</p></div>
+              <div className="flex gap-0.5">{Array.from({ length: 5 }).map((_, idx) => (<Star key={idx} size={14} className={idx < review.rating ? 'text-amber-400 fill-amber-400' : 'text-white/20'} />))}</div>
+            </div>
+            <p className="text-sm text-white/60">{review.comment}</p>
+          </GlassCard>
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
+// Support Panel
+const SupportPanel = () => {
+  const [ticketSubject, setTicketSubject] = useState('');
+  const [ticketDescription, setTicketDescription] = useState('');
+  const [ticketType, setTicketType] = useState('');
+  const [tickets, setTickets] = useState([
+    { id: 'TKT-001', subject: 'Provider was late', status: 'resolved', date: 'Sep 22, 2024' },
+    { id: 'TKT-002', subject: 'Refund not received', status: 'in-progress', date: 'Sep 24, 2024' },
+  ]);
+  const [showForm, setShowForm] = useState(false);
+
+  const submitTicket = () => {
+    if (!ticketSubject.trim() || !ticketDescription.trim()) return;
+    setTickets(prev => [{ id: `TKT-${String(prev.length + 3).padStart(3, '0')}`, subject: ticketSubject, status: 'pending', date: new Date().toLocaleDateString() }, ...prev]);
+    setShowForm(false);
+    setTicketSubject('');
+    setTicketDescription('');
+    setTicketType('');
+  };
+
+  return (
+    <div className="space-y-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <div className="flex items-center justify-between">
+          <div><h2 className="text-2xl font-light text-white mb-1">Support & Disputes</h2><p className="text-sm text-white/50">Get help or raise a concern</p></div>
+          <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 text-sm font-semibold rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all flex items-center gap-2"><AlertTriangle size={14} /> Raise Ticket</button>
+        </div>
+      </motion.div>
+
+      <AnimatePresence>
+        {showForm && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
+            <GlassCard className="p-6 mb-6" hover={false}>
+              <h3 className="text-lg font-semibold text-white mb-4">Raise a Support Ticket</h3>
+              <div className="space-y-4">
+                <div><label className="text-xs text-white/50 uppercase tracking-wider mb-2 block">Issue Type</label><div className="flex flex-wrap gap-2">{['Provider Misbehavior', 'Faulty Repair', 'Overcharged', 'No-Show', 'Other'].map(type => (<button key={type} onClick={() => setTicketType(type)} className={`px-3 py-2 rounded-xl text-xs transition-all ${ticketType === type ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'}`}>{type}</button>))}</div></div>
+                <div><label className="text-xs text-white/50 uppercase tracking-wider mb-2 block">Subject</label><input type="text" value={ticketSubject} onChange={(e) => setTicketSubject(e.target.value)} placeholder="Brief description of the issue" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-400/50 transition-all" /></div>
+                <div><label className="text-xs text-white/50 uppercase tracking-wider mb-2 block">Details</label><textarea value={ticketDescription} onChange={(e) => setTicketDescription(e.target.value)} placeholder="Provide more details..." rows={3} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-400/50 transition-all resize-none" /></div>
+                <button onClick={submitTicket} className="px-6 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 text-sm font-semibold rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all">Submit Ticket</button>
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Tickets */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+        <GlassCard className="p-6" hover={false}>
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><Headphones size={18} className="text-amber-300" /> My Tickets</h3>
+          <div className="space-y-3">
+            {tickets.map((ticket, i) => (
+              <motion.div key={ticket.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${ticket.status === 'resolved' ? 'bg-emerald-500/20 border border-emerald-500/30' : ticket.status === 'in-progress' ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-amber-500/20 border border-amber-500/30'}`}>
+                    {ticket.status === 'resolved' ? <Check size={16} className="text-emerald-300" /> : ticket.status === 'in-progress' ? <Clock3 size={16} className="text-blue-300" /> : <AlertTriangle size={16} className="text-amber-300" />}
+                  </div>
+                  <div><p className="text-sm text-white font-medium">{ticket.subject}</p><p className="text-xs text-white/40">{ticket.id} • {ticket.date}</p></div>
+                </div>
+                <span className={`px-3 py-1 rounded-full text-[10px] font-medium capitalize ${ticket.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-300' : ticket.status === 'in-progress' ? 'bg-blue-500/20 text-blue-300' : 'bg-amber-500/20 text-amber-300'}`}>{ticket.status}</span>
+              </motion.div>
+            ))}
+          </div>
+        </GlassCard>
+      </motion.div>
+
+      {/* FAQ */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
+        <GlassCard className="p-6" hover={false}>
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><HelpCircle size={18} className="text-amber-300" /> FAQ</h3>
+          <div className="space-y-2">
+            {['How do I cancel a booking?', 'How to request a refund?', 'What if the provider doesn\'t show up?', 'How to rate a provider?'].map((faq, i) => (
+              <div key={i} className="p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/5 transition-all cursor-pointer">
+                <p className="text-sm text-white/70">{faq}</p>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+      </motion.div>
+    </div>
+  );
+};
+
+// ==================== MAIN APP ====================
+export default function App() {
+  const [activeNav, setActiveNav] = useState('Dashboard');
+  const [openAccordions, setOpenAccordions] = useState({ devices: true });
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [time, setTime] = useState({ minutes: 2, seconds: 35 });
+  const [dismissed, setDismissed] = useState(false);
+
+  const [profile, setProfile] = useState({
+    name: 'Lora Piterson', role: 'UX/UI Designer', email: 'lora@crextio.com',
+    avatar: '👩‍💻', location: 'San Francisco, CA', website: 'https://crextio.com',
+    phone: '+1 234 567 890', salary: '$1,200',
+  });
+  const [notifications, setNotifications] = useState(initialNotifications);
+  const [tasks, setTasks] = useState(initialTasks);
+  const [progressData] = useState(initialProgressData);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchFilter, setSearchFilter] = useState('all');
+
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [taskFilter, setTaskFilter] = useState('all');
+
+  const [notifPos, setNotifPos] = useState({ top: 0, right: 0 });
+  const [userPos, setUserPos] = useState({ top: 0, right: 0 });
+
+  // Sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeSection, setActiveSection] = useState('dashboard');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const notifBtnRef = useRef(null);
+  const userBtnRef = useRef(null);
+  const notifDropdownRef = useRef(null);
+  const userDropdownRef = useRef(null);
+
+  const updatePositions = () => {
+    if (notifBtnRef.current) { const rect = notifBtnRef.current.getBoundingClientRect(); setNotifPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right }); }
+    if (userBtnRef.current) { const rect = userBtnRef.current.getBoundingClientRect(); setUserPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right }); }
+  };
+
+  useEffect(() => { updatePositions(); window.addEventListener('resize', updatePositions); window.addEventListener('scroll', updatePositions); return () => { window.removeEventListener('resize', updatePositions); window.removeEventListener('scroll', updatePositions); }; }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showNotifications && notifDropdownRef.current && !notifDropdownRef.current.contains(e.target) && notifBtnRef.current && !notifBtnRef.current.contains(e.target)) setShowNotifications(false);
+      if (showUserMenu && userDropdownRef.current && !userDropdownRef.current.contains(e.target) && userBtnRef.current && !userBtnRef.current.contains(e.target)) setShowUserMenu(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showNotifications, showUserMenu]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setSearchOpen(prev => !prev); }
+      if (e.key === 'Escape') { setSearchOpen(false); setShowNotifications(false); setShowUserMenu(false); setShowProfileModal(false); }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => { let interval; if (isPlaying) { interval = setInterval(() => { setTime(prev => { let { minutes, seconds } = prev; seconds++; if (seconds >= 60) { seconds = 0; minutes++; } return { minutes, seconds }; }); }, 1000); } return () => clearInterval(interval); }, [isPlaying]);
+
+  const toggleAccordion = (key) => setOpenAccordions(prev => ({ ...prev, [key]: !prev[key] }));
+  const formatTime = (t) => `${String(t.minutes).padStart(2, '0')}:${String(t.seconds).padStart(2, '0')}`;
+  const timePercentage = Math.min(((time.minutes * 60 + time.seconds) / (8 * 3600)) * 100, 100);
+
+  const handleMarkRead = (id) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  const handleMarkAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const handleDeleteNotification = (id) => setNotifications(prev => prev.filter(n => n.id !== id));
+  const toggleTask = (id) => setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+
+  const searchableItems = useMemo(() => {
+    const items = [];
+    tasks.forEach(t => items.push({ type: 'task', title: t.title, subtitle: t.subtitle, data: t, category: t.category }));
+    notifications.forEach(n => items.push({ type: 'notification', title: n.title, subtitle: n.message, data: n, category: 'notification' }));
+    navItems.forEach(n => items.push({ type: 'page', title: n, subtitle: `Navigate to ${n}`, data: n, category: 'page' }));
+    items.push({ type: 'profile', title: profile.name, subtitle: profile.role, data: profile, category: 'profile' });
+    return items;
+  }, [tasks, notifications, profile]);
+
+  const filteredSearchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    return searchableItems.filter(item => { const matchesQuery = item.title.toLowerCase().includes(query) || item.subtitle.toLowerCase().includes(query); const matchesFilter = searchFilter === 'all' || item.type === searchFilter; return matchesQuery && matchesFilter; }).slice(0, 10);
+  }, [searchQuery, searchFilter, searchableItems]);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+  const completedTasks = tasks.filter(t => t.completed).length;
+
+  const filteredTasks = useMemo(() => { if (taskFilter === 'all') return tasks; if (taskFilter === 'completed') return tasks.filter(t => t.completed); if (taskFilter === 'pending') return tasks.filter(t => !t.completed); return tasks.filter(t => t.category === taskFilter); }, [tasks, taskFilter]);
+
+  const getTaskIcon = (icon, completed) => { const cls = completed ? 'text-amber-300' : 'text-white/70'; switch (icon) { case 'monitor': return <Monitor size={16} className={cls} />; case 'zap': return <Zap size={16} className={cls} />; case 'message': return <MessageCircle size={16} className={cls} />; case 'ruler': return <Activity size={16} className={cls} />; case 'link': return <LinkIcon size={16} className={cls} />; default: return <Check size={16} className={cls} />; } };
+
+  const getTypeColor = (type) => { switch (type) { case 'success': return 'from-emerald-500/20 to-emerald-600/5 border-emerald-500/30'; case 'warning': return 'from-amber-500/20 to-amber-600/5 border-amber-500/30'; case 'error': return 'from-red-500/20 to-red-600/5 border-red-500/30'; default: return 'from-blue-500/20 to-blue-600/5 border-blue-500/30'; } };
+
+  // Render sidebar content based on active section
+  const renderSidebarContent = () => {
+    switch (activeSection) {
+      case 'auth': return <AuthPanel profile={profile} />;
+      case 'geo': return <GeoPanel />;
+      case 'providers': return <ProvidersPanel />;
+      case 'booking': return <BookingPanel />;
+      case 'tracking': return <TrackingPanel />;
+      case 'chat': return <ChatPanel />;
+      case 'payment': return <PaymentPanel />;
+      case 'reviews': return <ReviewsPanel />;
+      case 'support': return <SupportPanel />;
+      default: return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen text-white font-sans relative overflow-x-hidden">
+      <AnimatedBackground />
+
+      {/* ==================== SIDEBAR ==================== */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.aside
+            initial={{ x: -280 }}
+            animate={{ x: 0 }}
+            exit={{ x: -280 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className={`fixed top-0 left-0 h-full bg-[#0a0515]/95 backdrop-blur-2xl border-r border-white/10 z-[60] flex flex-col ${sidebarCollapsed ? 'w-[70px]' : 'w-[260px]'}`}
+          >
+            {/* Sidebar Header */}
+            <div className="p-4 border-b border-white/5 flex items-center justify-between">
+              {!sidebarCollapsed && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-[0_0_15px_rgba(251,191,36,0.4)]"><span className="text-sm font-bold text-gray-900">C</span></div>
+                  <span className="text-sm font-semibold text-white">Crextio</span>
+                </motion.div>
+              )}
+              <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all">
+                {sidebarCollapsed ? <ChevronRight size={14} className="text-white/70" /> : <ChevronLeft size={14} className="text-white/70" />}
+              </button>
+            </div>
+
+            {/* Sidebar Menu */}
+            <div className="flex-1 overflow-y-auto py-4 px-2 space-y-1" style={{ scrollbarWidth: 'thin' }}>
+              {sidebarMenuItems.map((item, i) => {
+                const Icon = item.icon;
+                const isActive = activeSection === item.id || (item.id === 'dashboard' && activeSection === 'dashboard');
+                return (
+                  <motion.button
+                    key={item.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    onClick={() => setActiveSection(item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left group ${
+                      isActive
+                        ? 'bg-gradient-to-r from-amber-400/20 to-amber-500/10 border border-amber-400/20 shadow-[0_0_15px_rgba(251,191,36,0.1)]'
+                        : 'hover:bg-white/5 border border-transparent'
+                    }`}
+                    title={sidebarCollapsed ? item.label : ''}
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isActive ? 'bg-amber-400/20' : 'bg-white/5 group-hover:bg-white/10'}`}>
+                      <Icon size={16} className={isActive ? 'text-amber-300' : 'text-white/50 group-hover:text-white/70'} />
+                    </div>
+                    {!sidebarCollapsed && <span className={`text-sm ${isActive ? 'text-amber-300 font-medium' : 'text-white/60 group-hover:text-white/80'} transition-colors`}>{item.label}</span>}
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            {/* Sidebar Footer */}
+            <div className="p-3 border-t border-white/5">
+              {!sidebarCollapsed ? (
+                <div className="flex items-center gap-3 p-2 rounded-xl bg-white/[0.03] border border-white/5">
+                  <ProfileImage size="sm" withGlow={false} />
+                  <div className="flex-1 min-w-0"><p className="text-xs text-white font-medium truncate">{profile.name}</p><p className="text-[10px] text-white/40 truncate">{profile.email}</p></div>
+                </div>
+              ) : (
+                <div className="flex justify-center"><ProfileImage size="sm" withGlow={false} /></div>
+              )}
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile sidebar overlay */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <div className="fixed inset-0 bg-black/50 z-[55] lg:hidden" onClick={() => setSidebarOpen(false)} />
+        )}
+      </AnimatePresence>
+
+      {/* ==================== MAIN CONTENT AREA ==================== */}
+      <div className={`transition-all duration-300 ${sidebarOpen && !sidebarCollapsed ? 'lg:ml-[260px]' : sidebarOpen && sidebarCollapsed ? 'lg:ml-[70px]' : ''}`}>
+        {/* Notification Dropdown */}
+        <AnimatePresence>
+          {showNotifications && (
+            <motion.div ref={notifDropdownRef} initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.2, ease: 'easeOut' }} style={{ position: 'fixed', top: notifPos.top, right: notifPos.right, zIndex: 99999 }} className="w-[380px] max-h-[500px] bg-[#0f0a1f]/98 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-[0_25px_80px_rgba(0,0,0,0.8)] overflow-hidden">
+              <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/[0.03]">
+                <div><h3 className="text-white font-semibold text-sm">Notifications</h3><p className="text-xs text-white/50">{unreadCount} unread</p></div>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (<button onClick={handleMarkAllRead} className="text-xs text-amber-300 hover:text-amber-200 flex items-center gap-1 transition-colors bg-amber-400/10 px-2.5 py-1 rounded-full"><CheckCheck size={12} /> Mark all</button>)}
+                  <button onClick={() => setShowNotifications(false)} className="p-1.5 hover:bg-white/10 rounded-full transition-colors"><X size={14} className="text-white/60" /></button>
+                </div>
+              </div>
+              <div className="overflow-y-auto max-h-[400px] p-2">
+                <AnimatePresence>
+                  {notifications.length === 0 ? (
+                    <div className="text-center py-12 text-white/40"><Bell size={32} className="mx-auto mb-3 opacity-50" /><p className="text-sm">No notifications yet</p></div>
+                  ) : (
+                    notifications.map((notif) => (
+                      <motion.div key={notif.id} layout initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20, height: 0, marginBottom: 0 }} transition={{ duration: 0.2 }} onClick={() => handleMarkRead(notif.id)} className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all mb-1 border group ${notif.read ? 'bg-white/[0.02] border-transparent hover:bg-white/5' : `bg-gradient-to-r ${getTypeColor(notif.type)} hover:brightness-125`}`}>
+                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-lg shrink-0">{notif.avatar}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2"><p className={`text-sm font-medium truncate ${notif.read ? 'text-white/60' : 'text-white'}`}>{notif.title}</p>{!notif.read && <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 shadow-[0_0_8px_rgba(251,191,36,0.8)]" />}</div>
+                          <p className="text-xs text-white/50 mt-0.5 line-clamp-2">{notif.message}</p><p className="text-[10px] text-white/30 mt-1">{notif.time}</p>
+                        </div>
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteNotification(notif.id); }} className="p-1.5 hover:bg-red-500/20 rounded-full transition-all opacity-0 group-hover:opacity-100 shrink-0"><Trash2 size={12} className="text-white/40 hover:text-red-400" /></button>
+                      </motion.div>
+                    ))
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* User Menu Dropdown */}
+        <AnimatePresence>
+          {showUserMenu && (
+            <motion.div ref={userDropdownRef} initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.2, ease: 'easeOut' }} style={{ position: 'fixed', top: userPos.top, right: userPos.right, zIndex: 99999 }} className="w-72 bg-[#0f0a1f]/98 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-[0_25px_80px_rgba(0,0,0,0.8)] overflow-hidden">
+              <div className="p-4 border-b border-white/10 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+                <div className="flex items-center gap-3"><ProfileImage size="md" /><div className="flex-1 min-w-0"><p className="text-white font-medium truncate">{profile.name}</p><p className="text-xs text-white/50 truncate">{profile.email}</p></div></div>
+              </div>
+              <div className="p-2">
+                <button onClick={() => { setShowUserMenu(false); setShowProfileModal(true); }} className="w-full flex items-center gap-3 p-3 rounded-xl text-sm text-white/70 hover:bg-white/5 hover:text-white transition-all"><Edit3 size={16} /> Edit Profile</button>
+                <button className="w-full flex items-center gap-3 p-3 rounded-xl text-sm text-white/70 hover:bg-white/5 hover:text-white transition-all"><Settings size={16} /> Settings</button>
+                <button className="w-full flex items-center gap-3 p-3 rounded-xl text-sm text-white/70 hover:bg-white/5 hover:text-white transition-all"><Award size={16} /> Achievements</button>
+                <div className="my-1 border-t border-white/5" />
+                <button className="w-full flex items-center gap-3 p-3 rounded-xl text-sm text-red-400/80 hover:bg-red-500/10 transition-all"><X size={16} /> Sign Out</button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Search Overlay */}
+        <AnimatePresence>
+          {searchOpen && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-start justify-center pt-[15vh]" style={{ zIndex: 999999 }} onClick={() => setSearchOpen(false)}>
+              <motion.div initial={{ y: -20, scale: 0.95 }} animate={{ y: 0, scale: 1 }} exit={{ y: -20, scale: 0.95 }} transition={{ type: 'spring', damping: 25, stiffness: 400 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-xl mx-4">
+                <div className="bg-[#0f0a1f]/98 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-[0_25px_80px_rgba(0,0,0,0.9)] overflow-hidden">
+                  <div className="flex items-center gap-3 p-4 border-b border-white/10"><Search size={20} className="text-white/40" /><input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search tasks, notifications, pages..." className="flex-1 bg-transparent text-white placeholder-white/30 text-sm focus:outline-none" autoFocus /><kbd className="text-[10px] text-white/30 bg-white/5 px-2 py-1 rounded border border-white/10">ESC</kbd></div>
+                  <div className="flex gap-2 px-4 py-3 border-b border-white/5">{['all', 'task', 'notification', 'page', 'profile'].map(f => (<button key={f} onClick={() => setSearchFilter(f)} className={`px-3 py-1 rounded-full text-xs transition-all capitalize ${searchFilter === f ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-white/5 text-white/40 border border-white/5 hover:bg-white/10'}`}>{f}</button>))}</div>
+                  <div className="max-h-80 overflow-y-auto p-2">
+                    {searchQuery.trim() === '' ? (
+                      <div className="text-center py-8 text-white/30 text-sm"><Search size={24} className="mx-auto mb-2 opacity-50" />Start typing to search...</div>
+                    ) : filteredSearchResults.length === 0 ? (
+                      <div className="text-center py-8 text-white/30 text-sm">No results found for "{searchQuery}"</div>
+                    ) : (
+                      filteredSearchResults.map((item, i) => (
+                        <motion.button key={`${item.type}-${i}`} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} onClick={() => { if (item.type === 'page') setActiveNav(item.title); if (item.type === 'task') toggleTask(item.data.id); if (item.type === 'notification') handleMarkRead(item.data.id); if (item.type === 'profile') setShowProfileModal(true); setSearchOpen(false); setSearchQuery(''); }} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-left group">
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 overflow-hidden ${item.type === 'profile' ? '' : item.type === 'task' ? 'bg-blue-500/20 text-blue-400' : item.type === 'notification' ? 'bg-amber-500/20 text-amber-400' : 'bg-purple-500/20 text-purple-400'}`}>
+                            {item.type === 'profile' ? (<img src={PROFILE_IMAGE_URL} alt="" className="w-full h-full object-cover" />) : item.type === 'task' ? <Check size={14} /> : item.type === 'notification' ? <Bell size={14} /> : <Globe size={14} />}
+                          </div>
+                          <div className="flex-1 min-w-0"><p className="text-sm text-white group-hover:text-amber-300 transition-colors truncate">{item.title}</p><p className="text-xs text-white/40 truncate">{item.subtitle}</p></div>
+                          <span className="text-[10px] text-white/20 bg-white/5 px-2 py-0.5 rounded-full capitalize">{item.type}</span>
+                        </motion.button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Profile Modal */}
+        <AnimatePresence>
+          {showProfileModal && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md" style={{ zIndex: 999999 }} onClick={() => setShowProfileModal(false)}>
+              <motion.div initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-lg bg-[#0f0a1f]/98 backdrop-blur-2xl border border-white/15 rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.9)] overflow-hidden">
+                <div className="relative h-32 bg-gradient-to-r from-purple-600/30 via-pink-500/30 to-amber-500/30"><button onClick={() => setShowProfileModal(false)} className="absolute top-4 right-4 p-2 bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20 transition-colors"><X size={18} className="text-white" /></button><div className="absolute -bottom-10 left-6"><ProfileImage size="xl" /></div></div>
+                <div className="pt-14 px-6 pb-6">
+                  <div className="space-y-4">
+                    <div><label className="text-xs text-white/50 uppercase tracking-wider mb-1 block">Full Name</label><input type="text" value={profile.name} onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-400/50 transition-all" /></div>
+                    <div><label className="text-xs text-white/50 uppercase tracking-wider mb-1 block">Role</label><input type="text" value={profile.role} onChange={(e) => setProfile(prev => ({ ...prev, role: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-400/50 transition-all" /></div>
+                    <div><label className="text-xs text-white/50 uppercase tracking-wider mb-1 block">Email</label><input type="email" value={profile.email} onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-400/50 transition-all" /></div>
+                  </div>
+                  <div className="flex gap-3 mt-6 pt-4 border-t border-white/5">
+                    <button onClick={() => setShowProfileModal(false)} className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-sm text-white/70 hover:bg-white/10 transition-all">Cancel</button>
+                    <button onClick={() => setShowProfileModal(false)} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-sm font-semibold text-gray-900 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)] transition-all">Save Changes</button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* MAIN CONTENT */}
+        <div className="relative z-10 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto">
+          {/* Navigation */}
+          <motion.nav initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }} className="flex items-center justify-between mb-8 bg-white/[0.03] backdrop-blur-2xl rounded-full px-4 py-2 border border-white/10 shadow-lg relative z-50">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setSidebarOpen(!sidebarOpen)} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all lg:hidden">
+                <Menu size={16} className="text-white/80" />
+              </button>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.4)]"><span className="text-lg font-bold text-gray-900">C</span></div>
+              <span className="text-xl font-semibold text-white ml-2 hidden sm:block">Crextio</span>
+            </div>
+            <div className="hidden lg:flex items-center gap-1 bg-white/5 rounded-full px-2 py-1 border border-white/5">
+              {navItems.map((item) => (<button key={item} onClick={() => setActiveNav(item)} className={`px-3 xl:px-4 py-2 rounded-full text-xs xl:text-sm font-medium transition-all duration-300 ${activeNav === item ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 shadow-[0_0_20px_rgba(251,191,36,0.3)]' : 'text-white/60 hover:text-white hover:bg-white/5'}`}>{item}</button>))}
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setSearchOpen(true)} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all group"><Search size={16} className="text-white/80 group-hover:text-amber-300 transition-colors" /></button>
+              <button ref={notifBtnRef} onClick={() => { setShowNotifications(!showNotifications); setShowUserMenu(false); updatePositions(); }} className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all relative ${showNotifications ? 'bg-amber-400/20 border-amber-400/30' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                <Bell size={16} className={`transition-colors ${showNotifications ? 'text-amber-300' : 'text-white/80'}`} />
+                {unreadCount > 0 && (<motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center px-1 shadow-[0_0_10px_rgba(239,68,68,0.6)]">{unreadCount}</motion.span>)}
+              </button>
+              <button ref={userBtnRef} onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifications(false); updatePositions(); }} className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-amber-400 hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all">
+                <img src={PROFILE_IMAGE_URL} alt="Profile" className="w-full h-full object-cover" onError={(e) => { e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f59e0b" width="100" height="100"/%3E%3Ctext x="50" y="60" font-size="40" text-anchor="middle" fill="white"%3EN%3C/text%3E%3C/svg%3E'; }} />
+              </button>
+            </div>
+          </motion.nav>
+
+          {/* ===== RENDER CONTENT BASED ON ACTIVE SECTION ===== */}
+          <AnimatePresence mode="wait">
+            {activeSection === 'dashboard' ? (
+              <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+                {/* Welcome Tip with Profile Image */}
+                <AnimatePresence>
+                  {!dismissed && (
+                    <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="mb-8 relative">
+                      <GlassCard className="relative overflow-hidden" hover={false}>
+                        <div className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-20 bg-gradient-to-br from-amber-400 to-pink-500 -translate-y-1/2 translate-x-1/3" />
+                        <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center gap-6">
+                          <div className="flex items-center gap-4 flex-1">
+                            <ProfileImage size="lg" />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <h2 className="text-xl md:text-3xl font-light text-white">Welcome back, <span className="font-semibold bg-gradient-to-r from-amber-300 to-pink-300 bg-clip-text text-transparent">{profile.name.split(' ')[0]}</span></h2>
+                                <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="text-2xl">👋</motion.span>
+                              </div>
+                              <div className="flex items-start gap-2 text-sm text-white/60"><Lightbulb size={16} className="text-amber-300 shrink-0 mt-0.5" /><p>Tip: Press <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs">⌘K</kbd> to search. You have {unreadCount} unread notifications and {completedTasks}/{tasks.length} tasks completed.</p></div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <button onClick={() => setShowProfileModal(true)} className="px-5 py-2.5 rounded-full bg-white/10 border border-white/10 text-sm text-white hover:bg-white/20 transition-all backdrop-blur-sm flex items-center gap-2"><Edit3 size={14} /> Edit Profile</button>
+                            <button onClick={() => setDismissed(true)} className="px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-sm font-medium text-gray-900 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)] transition-all">Got it</button>
+                          </div>
+                        </div>
+                      </GlassCard>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Hero Stats Row */}
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.3 }} className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                  {[
+                    { icon: Activity, label: 'Interviews', value: '15', color: 'from-blue-500/20 to-blue-600/5', iconColor: 'text-blue-400', glow: 'rgba(59,130,246,0.3)' },
+                    { icon: TrendingUp, label: 'Hired', value: '15', color: 'from-emerald-500/20 to-emerald-600/5', iconColor: 'text-emerald-400', glow: 'rgba(16,185,129,0.3)' },
+                    { icon: Shield, label: 'Project Time', value: '60%', color: 'from-purple-500/20 to-purple-600/5', iconColor: 'text-purple-400', glow: 'rgba(168,85,247,0.3)' },
+                    { icon: Zap, label: 'Output', value: '10', color: 'from-amber-500/20 to-amber-600/5', iconColor: 'text-amber-400', glow: 'rgba(251,191,36,0.3)' },
+                  ].map((stat, i) => { const Icon = stat.icon; return (<GlassCard key={stat.label} className={`p-5 bg-gradient-to-br ${stat.color}`}><div className="flex items-center justify-between mb-3"><div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-sm" style={{ boxShadow: `0 0 15px ${stat.glow}` }}><Icon size={18} className={stat.iconColor} /></div><span className="text-xs text-white/40 uppercase tracking-wider">{stat.label}</span></div><motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 + i * 0.1 }} className="text-3xl font-light text-white">{stat.value}</motion.div></GlassCard>); })}
+                </motion.div>
+
+                {/* Key Metrics */}
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.4 }} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                  {[
+                    { value: 78, label: 'Employees', icon: '👥', gradient: 'from-blue-500/10 to-transparent' },
+                    { value: 56, label: 'Hirings', icon: '👤', gradient: 'from-purple-500/10 to-transparent' },
+                    { value: 203, label: 'Projects', icon: '💻', gradient: 'from-amber-500/10 to-transparent' },
+                  ].map((metric, i) => (<GlassCard key={metric.label} className={`p-6 bg-gradient-to-br ${metric.gradient}`}><div className="flex items-center gap-4"><div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl backdrop-blur-sm">{metric.icon}</div><div><motion.span initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 + i * 0.1 }} className="text-5xl font-light text-white block">{metric.value}</motion.span><p className="text-sm text-white/50 mt-1">{metric.label}</p></div></div></GlassCard>))}
+                </motion.div>
+
+                {/* Main Grid - Top Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+                  <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5, delay: 0.5 }} className="lg:col-span-1">
+                    <GlassCard className="overflow-hidden">
+                      <div className="relative h-52 overflow-hidden"><img src={PROFILE_IMAGE_URL} alt="Profile" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} /><div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" /><button onClick={() => setShowProfileModal(true)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all"><Edit3 size={14} className="text-white" /></button><div className="absolute bottom-4 left-4 right-4"><div className="flex items-end justify-between"><div><h3 className="text-xl font-semibold text-white">{profile.name}</h3><p className="text-xs text-white/80">{profile.role}</p></div><div className="px-3 py-1.5 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full text-xs font-semibold text-gray-900 shadow-[0_0_15px_rgba(251,191,36,0.5)]">{profile.salary}</div></div></div></div>
+                      <div className="p-5"><div className="flex items-center gap-2 text-xs text-white/40"><MapPin size={12} /> {profile.location}</div><div className="flex items-center gap-2 mt-1 text-xs text-white/40"><Mail size={12} /> {profile.email}</div><div className="flex gap-2 mt-4"><button onClick={() => setShowProfileModal(true)} className="flex-1 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 rounded-xl text-xs font-semibold text-gray-900 hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all">Edit Profile</button><button className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center hover:bg-white/10 transition-all"><MoreVertical size={14} className="text-white/60" /></button></div></div>
+                    </GlassCard>
+                  </motion.div>
+
+                  <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.6 }} className="lg:col-span-1">
+                    <GlassCard className="p-6"><div className="flex items-center justify-between mb-4"><h3 className="text-lg font-medium text-white">Progress</h3><button className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all"><ArrowUpRight size={16} className="text-white/70" /></button></div><div className="flex items-baseline gap-3 mb-2"><span className="text-4xl font-light text-white">6.1h</span><div><span className="text-xs text-amber-300/80 block">Work Time</span><span className="text-xs text-white/40">this week</span></div></div><div className="mt-4 h-44"><ResponsiveContainer width="100%" height="100%"><BarChart data={progressData} barSize={10}><XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} /><Tooltip cursor={{ fill: 'rgba(255,255,255,0.03)' }} content={({ active, payload }) => { if (active && payload && payload.length) { return <div className="bg-white/10 backdrop-blur-xl border border-white/20 text-white text-xs px-3 py-2 rounded-lg font-medium">{payload[0].value > 80 ? '5h 23m' : `${(payload[0].value * 0.06).toFixed(1)}h`}</div>; } return null; }} /><Bar dataKey="value" radius={[5, 5, 0, 0]}>{progressData.map((entry, index) => (<Cell key={index} fill={index === 5 ? '#fbbf24' : 'rgba(255,255,255,0.25)'} style={{ filter: index === 5 ? 'drop-shadow(0 0 8px rgba(251,191,36,0.6))' : 'none' }} />))}</Bar></BarChart></ResponsiveContainer></div></GlassCard>
+                  </motion.div>
+
+                  <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.7 }} className="lg:col-span-1">
+                    <GlassCard className="p-6 bg-gradient-to-br from-amber-500/10 to-transparent"><div className="flex items-center justify-between mb-4"><h3 className="text-lg font-medium text-white">Time Tracker</h3><button className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all"><ArrowUpRight size={16} className="text-white/70" /></button></div><div className="flex flex-col items-center py-2"><CircularProgress percentage={timePercentage} displayTime={formatTime(time)} /><div className="flex items-center gap-3 mt-4 w-full justify-center"><motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} onClick={() => setIsPlaying(!isPlaying)} className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all">{isPlaying ? <Pause size={16} className="text-white" /> : <Play size={16} className="text-white ml-0.5" />}</motion.button><motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} onClick={() => { setIsPlaying(false); setTime({ minutes: 0, seconds: 0 }); }} className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all"><Clock size={16} className="text-white" /></motion.button><motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.4)] ml-auto"><Zap size={16} className="text-gray-900" /></motion.button></div><div className="flex items-center gap-2 mt-3 text-xs text-white/40"><div className={`w-2 h-2 rounded-full ${isPlaying ? 'bg-emerald-400 animate-pulse' : 'bg-white/20'}`} />{isPlaying ? 'Tracking active' : 'Paused'}</div></div></GlassCard>
+                  </motion.div>
+
+                  <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.8 }} className="lg:col-span-1">
+                    <GlassCard className="p-6 bg-gradient-to-br from-pink-500/10 to-transparent"><div className="flex items-center justify-between mb-6"><h3 className="text-lg font-medium text-white">Onboarding</h3><span className="text-3xl font-light text-amber-300">{Math.round((completedTasks / tasks.length) * 100)}%</span></div><div className="flex gap-2 mb-6">{[{ label: 'Done', width: `${(completedTasks / tasks.length) * 100}%`, color: 'from-amber-400 to-amber-500', glow: 'rgba(251,191,36,0.5)' }, { label: 'In Progress', width: `${((tasks.length - completedTasks) / tasks.length) * 50}%`, color: 'from-purple-400 to-purple-500', glow: 'rgba(168,85,247,0.5)' }, { label: 'Pending', width: `${((tasks.length - completedTasks) / tasks.length) * 30}%`, color: 'from-white/30 to-white/30', glow: 'transparent' }].map((bar, i) => (<div key={i} className="flex-1"><div className="text-[10px] text-white/50 mb-2 uppercase tracking-wider"><span>{bar.label}</span></div><div className="h-14 rounded-2xl bg-white/5 border border-white/5 overflow-hidden relative"><motion.div initial={{ width: 0 }} animate={{ width: bar.width }} transition={{ duration: 0.8, delay: 0.9 + i * 0.1 }} className={`h-full bg-gradient-to-b ${bar.color} rounded-2xl relative`} style={{ boxShadow: `0 0 15px ${bar.glow}` }}><div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent rounded-2xl" /></motion.div></div></div>))}</div><div className="flex items-center gap-2 flex-wrap"><span className="text-xs text-white/60 bg-white/5 border border-white/10 px-3 py-1 rounded-full backdrop-blur-sm">{completedTasks} Done</span><span className="text-xs text-white/60 bg-white/5 border border-white/10 px-3 py-1 rounded-full backdrop-blur-sm">{tasks.length - completedTasks} Left</span></div></GlassCard>
+                  </motion.div>
+                </div>
+
+                {/* Bottom Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  <motion.div initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.9 }}>
+                    <GlassCard className="p-6"><div className="flex items-center justify-between mb-2"><h3 className="text-lg font-medium text-white">Quick Settings</h3><button className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all"><Settings size={16} className="text-white/70" /></button></div><div className="mt-4"><AccordionItem title="Pension contributions" isOpen={openAccordions.pension} onToggle={() => toggleAccordion('pension')} /><AccordionItem title="Devices" isOpen={openAccordions.devices} onToggle={() => toggleAccordion('devices')}><div className="flex items-center gap-3 pb-4"><div className="w-12 h-12 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm"><Monitor size={20} className="text-white/80" /></div><div className="flex-1"><p className="font-medium text-white">MacBook Air</p><p className="text-xs text-white/50">Version M1</p></div><button className="p-2 hover:bg-white/10 rounded-full transition-colors"><MoreVertical size={16} className="text-white/60" /></button></div></AccordionItem><AccordionItem title="Compensation Summary" isOpen={openAccordions.compensation} onToggle={() => toggleAccordion('compensation')} /><AccordionItem title="Employee Benefits" isOpen={openAccordions.benefits} onToggle={() => toggleAccordion('benefits')} /></div></GlassCard>
+                  </motion.div>
+
+                  <motion.div initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 1.0 }}>
+                    <GlassCard className="p-6 bg-gradient-to-br from-gray-900/50 to-transparent border-white/5"><div className="flex items-center justify-between mb-4"><div><h3 className="text-lg font-medium text-white">Onboarding Tasks</h3><p className="text-xs text-white/50 mt-0.5">{completedTasks} of {tasks.length} completed</p></div><div className="flex items-baseline gap-1"><span className="text-3xl font-light text-white">{completedTasks}</span><span className="text-sm text-white/40">/{tasks.length}</span></div></div><div className="flex gap-2 mb-4 overflow-x-auto pb-1">{['all', 'pending', 'completed', 'meeting', 'work'].map(f => (<button key={f} onClick={() => setTaskFilter(f)} className={`px-3 py-1.5 rounded-full text-xs transition-all capitalize whitespace-nowrap ${taskFilter === f ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-white/5 text-white/40 border border-white/5 hover:bg-white/10 hover:text-white/60'}`}>{f}</button>))}</div><div className="space-y-2 max-h-[350px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}><AnimatePresence mode="popLayout">{filteredTasks.length === 0 ? (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-8 text-white/30 text-sm">No tasks match this filter</motion.div>) : (filteredTasks.map((task) => (<motion.div key={task.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} whileHover={{ x: 4 }} transition={{ duration: 0.3 }} onClick={() => toggleTask(task.id)} className={`flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 cursor-pointer border ${task.completed ? 'bg-white/5 border-white/10' : 'bg-white/[0.02] border-white/5 hover:bg-white/5 hover:border-white/10'}`}><div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${task.completed ? 'bg-amber-500/20 border-amber-500/30' : 'bg-white/5 border-white/10'}`}>{getTaskIcon(task.icon, task.completed)}</div><div className="flex-1 min-w-0"><p className={`text-sm font-medium truncate transition-all ${task.completed ? 'line-through text-white/50' : 'text-white'}`}>{task.title}</p><p className="text-xs text-white/40">{task.subtitle}</p></div><div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${task.completed ? 'bg-gradient-to-br from-amber-400 to-amber-500 shadow-[0_0_10px_rgba(251,191,36,0.5)]' : 'border-2 border-white/20 hover:border-white/40'}`}>{task.completed && <Check size={12} className="text-gray-900" strokeWidth={3} />}</div></motion.div>)))}</AnimatePresence></div><div className="mt-4 pt-4 border-t border-white/5"><div className="flex items-center justify-between text-xs text-white/40 mb-2"><span>Overall Progress</span><span>{Math.round((completedTasks / tasks.length) * 100)}%</span></div><div className="h-2 bg-white/5 rounded-full overflow-hidden"><motion.div className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full" animate={{ width: `${(completedTasks / tasks.length) * 100}%` }} transition={{ duration: 0.5 }} style={{ boxShadow: '0 0 10px rgba(251,191,36,0.5)' }} /></div></div></GlassCard>
+                  </motion.div>
+                </div>
+
+                {/* Calendar */}
+                <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 1.1 }}>
+                  <GlassCard className="p-5" hover={false}><CalendarSchedule /></GlassCard>
+                </motion.div>
+              </motion.div>
+            ) : (
+              <motion.div key={activeSection} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+                {renderSidebarContent()}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Footer */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }} className="mt-8 text-center text-xs text-white/30">
+            © 2024 Crextio. Crafted with precision. Press <kbd className="bg-white/5 px-1.5 py-0.5 rounded border border-white/10 mx-1">⌘K</kbd> to search.
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+}
